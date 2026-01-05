@@ -51,8 +51,9 @@
 
 > [!IMPORTANT]
 > 1. 前往`Govin`公众号回复`cdn`获取代理加速地址，提升订阅源与频道图标等资源的访问速度
-> 2. 本项目不提供对接口结果稳定性的保证与解释
-> 3. 若要实现最佳的稳定性，建议自行维护数据源
+> 2. 默认订阅源已不再提供，需要自行添加
+> 3. 本项目不提供对接口结果稳定性的保证与解释
+> 4. 若要实现最佳的稳定性，建议自行维护数据源
 
 ## 核心特性
 
@@ -107,7 +108,7 @@
 | open_speed_test        | 开启测速功能，获取响应时间、速率、分辨率                                                                                                 | True              |
 | open_filter_resolution | 开启分辨率过滤，低于最小分辨率（min_resolution）的接口将会被过滤，GUI 用户需要手动安装 FFmpeg，程序会自动调用 FFmpeg 获取接口分辨率，推荐开启，虽然会增加测速阶段耗时，但能更有效地区分是否可播放的接口 | True              |
 | open_filter_speed      | 开启速率过滤，低于最小速率（min_speed）的接口将会被过滤                                                                                     | True              |
-| open_supply            | 开启补偿机制模式，用于控制当频道接口数量不足时，自动将不满足条件（例如低于最小速率）但可能可用的接口添加至结果中，从而避免结果为空的情况                                                 | False             |
+| open_supply            | 开启补偿机制模式，用于控制当频道接口数量不足时，自动将不满足条件（例如低于最小速率）但可能可用的接口添加至结果中，从而避免结果为空的情况                                                 | True              |
 | min_resolution         | 接口最小分辨率，需要开启 open_filter_resolution 才能生效                                                                             | 1920x1080         |
 | max_resolution         | 接口最大分辨率，需要开启 open_filter_resolution 才能生效                                                                             | 1920x1080         |
 | min_speed              | 接口最小速率（单位 M/s），需要开启 open_filter_speed 才能生效                                                                           | 0.5               |
@@ -140,7 +141,6 @@
 iptv-api/                  # 项目根目录
 ├── config                 # 配置文件目录，包含配置文件、模板文件等
 │   └── config.ini         # 配置参数文件
-│   └── rtp                # 各地区运营商组播源ip
 │   └── demo.txt           # 频道模板
 │   └── alias.txt          # 频道别名
 │   └── blacklist.txt      # 接口黑名单
@@ -313,6 +313,10 @@ docker run -d -p 80:8080 guovern/iptv-api
 微信公众号搜索 Govin，或扫码，接收更新推送、学习更多使用技巧：
 
 ![微信公众号](./static/images/qrcode.jpg)
+
+### 定制化（付费）
+
+需要远程部署或定制化服务可联系邮箱：`360996299@qq.com`
 
 ## Star统计
 

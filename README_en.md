@@ -53,8 +53,9 @@ pipeline 🚀. Supports extensive customization; paste the resulting URL into yo
 > [!IMPORTANT]
 > 1. Visit the `Govin` WeChat official account and reply with `cdn` to get a proxy acceleration address to improve
      access speed for subscription sources and channel icons.
-> 2. This project does not guarantee or explain the stability of the interface results.
-> 3. To achieve optimal stability, it is recommended to maintain the data sources yourself.
+> 2. The default subscription sources are no longer provided; please add them yourself.
+> 3. This project does not guarantee or explain the stability of the interface results.
+> 4. To achieve optimal stability, it is recommended to maintain the data sources yourself.
 
 ## Core Features
 
@@ -110,7 +111,7 @@ pipeline 🚀. Supports extensive customization; paste the resulting URL into yo
 | open_speed_test        | Enable speed test functionality to obtain response time, rate, and resolution.                                                                                                                                                                                                                                                              | True              |
 | open_filter_resolution | Enable resolution filtering. Interfaces below the minimum resolution (`min_resolution`) will be filtered. GUI users need to manually install FFmpeg; the program will call FFmpeg to obtain interface resolution. Recommended to enable: although it increases speed test time, it more effectively distinguishes playable interfaces.      | True              |
 | open_filter_speed      | Enable speed filtering. Interfaces below the minimum speed (`min_speed`) will be filtered.                                                                                                                                                                                                                                                  | True              |
-| open_supply            | Enable compensation mechanism mode. When the number of channel interfaces is insufficient, interfaces that do not meet the conditions (such as lower than minimum speed) but may still be available will be added to the result to avoid empty results.                                                                                     | False             |
+| open_supply            | Enable compensation mechanism mode. When the number of channel interfaces is insufficient, interfaces that do not meet the conditions (such as lower than minimum speed) but may still be available will be added to the result to avoid empty results.                                                                                     | True              |
 | min_resolution         | Minimum interface resolution, takes effect only when `open_filter_resolution` is enabled.                                                                                                                                                                                                                                                   | 1920x1080         |
 | max_resolution         | Maximum interface resolution, takes effect only when `open_filter_resolution` is enabled.                                                                                                                                                                                                                                                   | 1920x1080         |
 | min_speed              | Minimum interface speed (unit: M/s), takes effect only when `open_filter_speed` is enabled.                                                                                                                                                                                                                                                 | 0.5               |
@@ -143,7 +144,6 @@ pipeline 🚀. Supports extensive customization; paste the resulting URL into yo
 iptv-api/                  # Project root directory
 ├── config                 # Configuration files directory, includes config files, templates, etc.
 │   └── config.ini         # Configuration parameters file
-│   └── rtp                # Multicast IPs for each region/operator
 │   └── demo.txt           # Channel template
 │   └── alias.txt          # Channel aliases
 │   └── blacklist.txt      # Interface blacklist
@@ -324,6 +324,10 @@ Follow my GitHub account [Guovin](https://github.com/Guovin) to find more useful
 WeChat public account search for Govin, or scan the code to receive updates and learn more tips:
 
 ![Wechat public account](./static/images/qrcode.jpg)
+
+### Customization (Paid)
+
+For remote deployment or custom services, please contact: `360996299@qq.com`
 
 ## Star History
 
