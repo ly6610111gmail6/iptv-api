@@ -53,25 +53,26 @@ pipeline 🚀. Supports extensive customization; paste the resulting URL into yo
 > [!IMPORTANT]
 > 1. Visit the `Govin` WeChat official account and reply with `cdn` to get a proxy acceleration address to improve
      access speed for subscription sources and channel icons.
-> 2. This project does not guarantee or explain the stability of the interface results.
-> 3. To achieve optimal stability, it is recommended to maintain the data sources yourself.
+> 2. The default subscription sources are no longer provided; please add them yourself.
+> 3. This project does not guarantee or explain the stability of the interface results.
+> 4. To achieve optimal stability, it is recommended to maintain the data sources yourself.
 
 ## Core Features
 
-| Feature                               | Status | Description                                                                                                                                        |
-|:--------------------------------------|:------:|:---------------------------------------------------------------------------------------------------------------------------------------------------|
-| **Custom Templates**                  |   ✅    | Generate personalized channels as you wish                                                                                                         |
-| **Channel Alias**                     |   ✅    | Improves channel result coverage and accuracy, supports regular expressions                                                                        |
-| **Multiple Source Types**             |   ✅    | Supports local sources, subscriptions                                                                                                              |
-| **RTMP streaming**                    |   ✅    | Supports HLS mode to improve compatibility and reduce buffering, enhancing playback on poor networks, and supports playback in browsers or players |
-| **Playback Interfaces**               |   ✅    | Supports acquisition and generation of playback interfaces                                                                                         |
-| **EPG (Electronic Program Guide)**    |   ✅    | Displays channel preview content                                                                                                                   |
-| **Channel Logo**                      |   ✅    | Supports custom channel logo library sources                                                                                                       |
-| **Interface Speed Test & Validation** |   ✅    | Measures latency, speed, resolution, and filters invalid interfaces                                                                                |
-| **Advanced Preferences**              |   ✅    | IPv4/IPv6, interface sorting priority, quantity configuration, blacklist/whitelist, region & ISP filtering                                         |
-| **Scheduled Tasks**                   |   ✅    | Automatically updates at 6:00 and 18:00 Beijing time daily by default; customizable schedule                                                       |
-| **Multiple Run Modes**                |   ✅    | Supports workflow, CLI, GUI software, Docker (amd64/arm64/arm v7)                                                                                  |
-| **More Features**                     |   ✨    | See [Configuration Parameters](#Config) section for details                                                                                        |
+| Feature                       | Support | Description                                                                               |
+|:------------------------------|:-------:|:------------------------------------------------------------------------------------------|
+| **Custom templates**          |    ✅    | Generate custom channel playlists                                                         |
+| **Channel aliases**           |    ✅    | Improve channel matching and accuracy, supports regular expressions                       |
+| **Multi-source aggregation**  |    ✅    | Local sources and subscription sources                                                    |
+| **Stream relay**              |    ✅    | Improve playback on weak networks, supports direct browser playback                       |
+| **Replay/VOD interfaces**     |    ✅    | Fetching and generating replay/VOD interfaces                                             |
+| **EPG**                       |    ✅    | Fetch and display channel program guides                                                  |
+| **Channel logos**             |    ✅    | Custom channel logo library sources                                                       |
+| **Speed test & validation**   |    ✅    | Obtain latency, bitrate, resolution; filter invalid interfaces; supports real-time output |
+| **Advanced preferences**      |    ✅    | Rate, resolution, blacklist/whitelist, location and ISP custom filters                    |
+| **Scheduled tasks**           |    ✅    | Scheduled or interval updates                                                             |
+| **Multi-platform deployment** |    ✅    | Workflows, CLI, GUI, Docker (amd64/arm64/arm v7)                                          |
+| **More features**             |    ✨    | See [Configuration](#Config) section for details                                          |
 
 ## Config
 
@@ -102,7 +103,6 @@ pipeline 🚀. Supports extensive customization; paste the resulting URL into yo
 | public_scheme          | Public network protocol. Optional values: `http`, `https`.                                                                                                                                                                                                                                                                                  | http              |
 | public_domain          | Public network Host address, used to generate access URLs in the result; uses local machine IP by default.                                                                                                                                                                                                                                  | 127.0.0.1         |
 | cdn_url                | CDN proxy acceleration address, used for accelerated access to subscription sources, channel icons and other resources.                                                                                                                                                                                                                     |                   |
-| open_driver            | Enable browser execution. If there are no updates, this mode can be enabled to try fetching data via a browser, but it consumes more resources.                                                                                                                                                                                             | False             |
 | open_local             | Enable local source function, will use the data in the template file and the local source file (`local.txt`).                                                                                                                                                                                                                               | True              |
 | open_subscribe         | Enable subscription source function.                                                                                                                                                                                                                                                                                                        | True              |
 | open_history           | Enable using historical update results (including interfaces from template and result files), merged into this update.                                                                                                                                                                                                                      | True              |
@@ -110,7 +110,7 @@ pipeline 🚀. Supports extensive customization; paste the resulting URL into yo
 | open_speed_test        | Enable speed test functionality to obtain response time, rate, and resolution.                                                                                                                                                                                                                                                              | True              |
 | open_filter_resolution | Enable resolution filtering. Interfaces below the minimum resolution (`min_resolution`) will be filtered. GUI users need to manually install FFmpeg; the program will call FFmpeg to obtain interface resolution. Recommended to enable: although it increases speed test time, it more effectively distinguishes playable interfaces.      | True              |
 | open_filter_speed      | Enable speed filtering. Interfaces below the minimum speed (`min_speed`) will be filtered.                                                                                                                                                                                                                                                  | True              |
-| open_supply            | Enable compensation mechanism mode. When the number of channel interfaces is insufficient, interfaces that do not meet the conditions (such as lower than minimum speed) but may still be available will be added to the result to avoid empty results.                                                                                     | False             |
+| open_supply            | Enable compensation mechanism mode. When the number of channel interfaces is insufficient, interfaces that do not meet the conditions (such as lower than minimum speed) but may still be available will be added to the result to avoid empty results.                                                                                     | True              |
 | min_resolution         | Minimum interface resolution, takes effect only when `open_filter_resolution` is enabled.                                                                                                                                                                                                                                                   | 1920x1080         |
 | max_resolution         | Maximum interface resolution, takes effect only when `open_filter_resolution` is enabled.                                                                                                                                                                                                                                                   | 1920x1080         |
 | min_speed              | Minimum interface speed (unit: M/s), takes effect only when `open_filter_speed` is enabled.                                                                                                                                                                                                                                                 | 0.5               |
@@ -143,7 +143,6 @@ pipeline 🚀. Supports extensive customization; paste the resulting URL into yo
 iptv-api/                  # Project root directory
 ├── config                 # Configuration files directory, includes config files, templates, etc.
 │   └── config.ini         # Configuration parameters file
-│   └── rtp                # Multicast IPs for each region/operator
 │   └── demo.txt           # Channel template
 │   └── alias.txt          # Channel aliases
 │   └── blacklist.txt      # Interface blacklist
@@ -324,6 +323,10 @@ Follow my GitHub account [Guovin](https://github.com/Guovin) to find more useful
 WeChat public account search for Govin, or scan the code to receive updates and learn more tips:
 
 ![Wechat public account](./static/images/qrcode.jpg)
+
+### Customization (Paid)
+
+For remote deployment or custom services, please contact: `360996299@qq.com`
 
 ## Star History
 
