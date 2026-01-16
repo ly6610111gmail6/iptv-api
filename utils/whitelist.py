@@ -1,7 +1,7 @@
 import os
 import re
 from collections import defaultdict
-from typing import List, Pattern
+from typing import List, Pattern, Dict, Any
 
 import utils.constants as constants
 from utils.tools import get_real_path, resource_path
@@ -129,17 +129,18 @@ def get_whitelist_total_count(data_map: WhitelistMaps) -> int:
 
 
 def get_section_entries(path: str = constants.whitelist_path, section: str = "WHITELIST",
-                        pattern: Pattern[str] = None) -> tuple[List[str], List[str]]:
+                        pattern: Pattern[str] = None) -> tuple[List[Dict[str, Any]], List[Dict[str, Any]]]:
     """
     Get URLs from a specific section in the whitelist file.
     Returns a tuple: (inside_section_list, outside_section_list).
+    Each item in the list is either a string URL or a dictionary with 'url' and 'headers' keys.
     """
     real_path = get_real_path(resource_path(path))
     if not os.path.exists(real_path):
         return [], []
 
-    inside: List[str] = []
-    outside: List[str] = []
+    inside: List[Dict[str, Any]] = []
+    outside: List[Dict[str, Any]] = []
     in_section = False
     header_re = re.compile(r"^\[.*\]$")
 
@@ -157,13 +158,45 @@ def get_section_entries(path: str = constants.whitelist_path, section: str = "WH
             if s.startswith("#"):
                 continue
 
-            if s:
-                target = inside if in_section else outside
-                if pattern:
-                    match = pattern.search(s)
-                    if match:
-                        target.append(match.group())
-                else:
-                    target.append(s)
+            # 解析行内容，支持 "url,header1:value1,header2:value2" 格式
+            parts = s.split(",")
+            if not parts:
+                continue
+                
+            # 第一个部分是 URL
+            url = parts[0].strip()
+            if not url:
+                continue
+                
+            # 如果有更多部分，解析为请求头
+            headers = None
+            if len(parts) > 1:
+                headers = {}
+                for part in parts[1:]:
+                    part = part.strip()
+                    if not part:
+                        continue
+                        
+                    # 解析 "header:value" 格式
+                    header_parts = part.split(":", 1)
+                    if len(header_parts) == 2:
+                        header_name = header_parts[0].strip()
+                        header_value = header_parts[1].strip()
+                        if header_name:
+                            headers[header_name] = header_value
+            
+            # 创建结果项
+            item = {"url": url}
+            if headers:
+                item["headers"] = headers
+            
+            # 根据模式匹配决定是否添加
+            target = inside if in_section else outside
+            if pattern:
+                match = pattern.search(url)
+                if match:
+                    target.append(item)
+            else:
+                target.append(item)
 
     return inside, outside

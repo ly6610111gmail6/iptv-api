@@ -130,22 +130,34 @@ class UpdateSource:
             constants.subscribe_path,
             pattern=constants.url_pattern,
         )
-        subscribe_urls = list(dict.fromkeys(whitelist_subscribe_urls + default_subscribe_urls))
+        
+        # 提取 whitelist 中的 URL 用于排序
+        whitelist_urls = [item['url'] for item in whitelist_subscribe_urls]
+        
+        # 合并并去重
+        all_urls = []
+        seen_urls = set()
+        
+        for item in whitelist_subscribe_urls + default_subscribe_urls:
+            if item['url'] not in seen_urls:
+                seen_urls.add(item['url'])
+                all_urls.append(item)
+        
         print(
             t("msg.subscribe_urls_whitelist_total").format(
                 default_count=len(default_subscribe_urls),
                 whitelist_count=len(whitelist_subscribe_urls),
-                total=len(subscribe_urls),
+                total=len(all_urls),
             )
         )
-        if not subscribe_urls:
+        if not all_urls:
             print(t("msg.no_subscribe_urls").format(file=constants.subscribe_path))
             return {}
-
+    
         return await get_channels_by_subscribe_urls(
-            subscribe_urls,
+            all_urls,
             names=channel_names,
-            whitelist=whitelist_subscribe_urls,
+            whitelist=whitelist_urls,
             callback=self.update_progress,
         )
 

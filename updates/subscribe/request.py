@@ -34,13 +34,32 @@ async def get_channels_by_subscribe_urls(
     """
     if not os.getenv("GITHUB_ACTIONS") and config.cdn_url:
         def _map_raw(u):
+            # 如果 u 是字典，只对 url 字段进行处理
+            if isinstance(u, dict):
+                u['url'] = join_url(config.cdn_url, u['url']) if "raw.githubusercontent.com" in u['url'] else u['url']
+                return u
             return join_url(config.cdn_url, u) if "raw.githubusercontent.com" in u else u
 
         urls = [_map_raw(u) for u in urls]
-        whitelist = [_map_raw(u) for u in whitelist] if whitelist else None
+        # 处理 whitelist
+        if whitelist:
+            processed_whitelist = []
+            for u in whitelist:
+                if isinstance(u, dict):
+                    processed_whitelist.append(join_url(config.cdn_url, u['url']) if "raw.githubusercontent.com" in u['url'] else u['url'])
+                else:
+                    processed_whitelist.append(join_url(config.cdn_url, u) if "raw.githubusercontent.com" in u else u)
+            whitelist = processed_whitelist
+    
+    # 处理排序逻辑
     if whitelist:
-        index_map = {u: i for i, u in enumerate(whitelist)}
-        urls.sort(key=lambda u: index_map.get(u, len(whitelist)))
+        def get_url_sort_key(u):
+            url = u['url'] if isinstance(u, dict) else u
+            return index_map.get(url, len(whitelist))
+        
+        index_map = {url: i for i, url in enumerate(whitelist)}
+        urls.sort(key=get_url_sort_key)
+    
     subscribe_results = {}
     subscribe_urls_len = len(urls)
     pbar = tqdm_asyncio(
@@ -57,7 +76,14 @@ async def get_channels_by_subscribe_urls(
     logger = get_logger(constants.nomatch_log_path, level=INFO, init=True)
 
     def process_subscribe_channels(subscribe_info: str | dict) -> defaultdict:
-        subscribe_url = subscribe_info
+        # 提取 url 和 headers
+        if isinstance(subscribe_info, dict):
+            subscribe_url = subscribe_info['url']
+            custom_headers = subscribe_info.get('headers', None)
+        else:
+            subscribe_url = subscribe_info
+            custom_headers = None
+            
         channels = defaultdict(lambda: defaultdict(lambda: defaultdict(list)))
         in_whitelist = whitelist and (subscribe_url in whitelist)
         try:
@@ -66,12 +92,12 @@ async def get_channels_by_subscribe_urls(
                 response = (
                     retry_func(
                         lambda: get_soup_requests(
-                            subscribe_url, timeout=config.request_timeout
+                            subscribe_url, timeout=config.request_timeout, custom_headers=custom_headers
                         ),
                         name=subscribe_url,
                     )
                     if retry
-                    else get_soup_requests(subscribe_url, timeout=config.request_timeout)
+                    else get_soup_requests(subscribe_url, timeout=config.request_timeout, custom_headers=custom_headers)
                 )
             except Exception as e:
                 print(f"{subscribe_url}: {e}")

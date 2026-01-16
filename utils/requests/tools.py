@@ -11,7 +11,7 @@ headers = {
 }
 
 
-def get_requests(url, data=None, proxy=None, timeout=30):
+def get_requests(url, data=None, proxy=None, timeout=30, custom_headers=None):
     """
     Get the response by requests
     """
@@ -19,12 +19,17 @@ def get_requests(url, data=None, proxy=None, timeout=30):
     response = None
     try:
         with requests.Session() as session:
+            # 使用默认请求头和自定义请求头的合并
+            request_headers = headers.copy()
+            if custom_headers:
+                request_headers.update(custom_headers)
+                
             if data:
                 response = session.post(
-                    url, headers=headers, data=data, proxies=proxies, timeout=timeout
+                    url, headers=request_headers, data=data, proxies=proxies, timeout=timeout
                 )
             else:
-                response = session.get(url, headers=headers, proxies=proxies, timeout=timeout)
+                response = session.get(url, headers=request_headers, proxies=proxies, timeout=timeout)
     except requests.RequestException as e:
         raise e
 
@@ -38,11 +43,11 @@ def get_requests(url, data=None, proxy=None, timeout=30):
     return response
 
 
-def get_soup_requests(url, data=None, proxy=None, timeout=30):
+def get_soup_requests(url, data=None, proxy=None, timeout=30, custom_headers=None):
     """
     Get the soup by requests
     """
-    response = get_requests(url, data, proxy, timeout)
+    response = get_requests(url, data, proxy, timeout, custom_headers)
     source = re.sub(r"<!--.*?-->", "", response.text or "", flags=re.DOTALL)
     soup = BeautifulSoup(source, "html.parser")
     return soup
