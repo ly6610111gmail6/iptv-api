@@ -1,5 +1,5 @@
 #EXTM3U x-tvg-url="https://gh-proxy.com/https://raw.githubusercontent.com/ly6610111gmail6/iptv-api/refs/heads/master/output/epg/epg.gz"
-#EXTINF:-1 tvg-name="苏州新闻综合" tvg-logo="https://gh-proxy.com/https://raw.githubusercontent.com/fanmingming/live/main/tv/苏州新闻综合.png" group-title="🕘️更新时间",2026-01-20 13:02:57
+#EXTINF:-1 tvg-name="苏州新闻综合" tvg-logo="https://gh-proxy.com/https://raw.githubusercontent.com/fanmingming/live/main/tv/苏州新闻综合.png" group-title="🕘️更新时间",2026-01-20 13:24:16
 https://live-auth.51kandianshi.com/szgd/csztv1.m3u8
 #EXTINF:-1 tvg-name="苏州新闻综合" tvg-logo="https://gh-proxy.com/https://raw.githubusercontent.com/fanmingming/live/main/tv/苏州新闻综合.png" group-title="☘️江苏频道",苏州新闻综合
 https://live-auth.51kandianshi.com/szgd/csztv1.m3u8
@@ -603,6 +603,8 @@ http://60.187.245.106:9901/tsfile/live/0124_1.m3u8?key=txiptv
 http://182.37.41.46:8154/tsfile/live/0124_1.m3u8?key=txiptv
 #EXTINF:-1 tvg-name="浙江卫视" tvg-logo="https://gh-proxy.com/https://raw.githubusercontent.com/fanmingming/live/main/tv/浙江卫视.png" group-title="☘️卫视频道",浙江卫视
 http://39.77.164.174:9901/tsfile/live/0002_19.m3u8?key=txiptv
+#EXTINF:-1 tvg-name="CETV1" tvg-logo="https://gh-proxy.com/https://raw.githubusercontent.com/fanmingming/live/main/tv/CETV1.png" group-title="☘️教育频道",CETV1
+http://39.77.164.174:9901/tsfile/live/0002_46.m3u8?key=txiptv
 #EXTINF:-1 tvg-name="CHC家庭影院" tvg-logo="https://gh-proxy.com/https://raw.githubusercontent.com/fanmingming/live/main/tv/CHC家庭影院.png" group-title="☘️电影频道",CHC家庭影院
 http://69.30.245.50/live/chcjt.m3u8
 #EXTINF:-1 tvg-name="CHC动作电影" tvg-logo="https://gh-proxy.com/https://raw.githubusercontent.com/fanmingming/live/main/tv/CHC动作电影.png" group-title="☘️电影频道",CHC动作电影
@@ -611,8 +613,14 @@ http://69.30.245.50/live/chcdz.m3u8
 http://39.77.164.174:9901/tsfile/live/0002_68.m3u8?key=txiptv
 #EXTINF:-1 tvg-name="CHC影迷电影" tvg-logo="https://gh-proxy.com/https://raw.githubusercontent.com/fanmingming/live/main/tv/CHC影迷电影.png" group-title="☘️电影频道",CHC影迷电影
 http://69.30.245.50/live/chcym.m3u8
+#EXTINF:-1 tvg-name="天津影视" tvg-logo="https://gh-proxy.com/https://raw.githubusercontent.com/fanmingming/live/main/tv/天津影视.png" group-title="☘️电影频道",天津影视
+http://sun135790.x3322.net:9901/tsfile/live/16004_1.m3u8?key=txiptv
 #EXTINF:-1 tvg-name="北京卡酷少儿" tvg-logo="https://gh-proxy.com/https://raw.githubusercontent.com/fanmingming/live/main/tv/北京卡酷少儿.png" group-title="☘️动画频道",北京卡酷少儿
 http://39.77.164.174:9901/tsfile/live/0002_47.m3u8?key=txiptv
+#EXTINF:-1 tvg-name="哈哈炫动" tvg-logo="https://gh-proxy.com/https://raw.githubusercontent.com/fanmingming/live/main/tv/哈哈炫动.png" group-title="☘️动画频道",哈哈炫动
+http://39.77.164.174:9901/tsfile/live/0002_48.m3u8?key=txiptv
+#EXTINF:-1 tvg-name="山东少儿" tvg-logo="https://gh-proxy.com/https://raw.githubusercontent.com/fanmingming/live/main/tv/山东少儿.png" group-title="☘️动画频道",山东少儿
+http://39.77.164.174:9901/tsfile/live/0002_54.m3u8?key=txiptv
 #EXTINF:-1 tvg-name="睛彩广场舞" tvg-logo="https://gh-proxy.com/https://raw.githubusercontent.com/fanmingming/live/main/tv/睛彩广场舞.png" group-title="☘️睛彩频道",睛彩广场舞
 http://gslbserv.itv.cmvideo.cn:80/3000000020000011523/index.m3u8?channel-id=FifastbLive&Contentid=3000000020000011523&livemode=1&stbId=YanG-1989
 #EXTINF:-1 tvg-name="睛彩广场舞" tvg-logo="https://gh-proxy.com/https://raw.githubusercontent.com/fanmingming/live/main/tv/睛彩广场舞.png" group-title="☘️睛彩频道",睛彩广场舞
@@ -781,5 +789,15 @@ http://gslbserv.itv.cmvideo.cn:80/3000000020000011521/index.m3u8?channel-id=Fifa
 http://gslbserv.itv.cmvideo.cn:80/3000000020000011522/index.m3u8?channel-id=FifastbLive&Contentid=3000000020000011522&livemode=1&stbId=YanG-1989
 #EXTINF:-1 tvg-name="咪视界38" tvg-logo="https://gh-proxy.com/https://raw.githubusercontent.com/fanmingming/live/main/tv/咪视界38.png" group-title="☘️咪视界",咪视界38
 http://gslbserv.itv.cmvideo.cn:80/3000000020000011522/index.m3u8?channel-id=FifastbLive&Contentid=3000000020000011522&livemode=1&stbId=BingCha
+#EXTINF:-1 tvg-name="山东农科" tvg-logo="https://gh-proxy.com/https://raw.githubusercontent.com/fanmingming/live/main/tv/山东农科.png" group-title="☘️其他频道",山东农科
+http://39.77.164.174:9901/tsfile/live/0002_55.m3u8?key=txiptv
 #EXTINF:-1 tvg-name="山东综艺" tvg-logo="https://gh-proxy.com/https://raw.githubusercontent.com/fanmingming/live/main/tv/山东综艺.png" group-title="☘️其他频道",山东综艺
 http://39.77.164.174:9901/tsfile/live/0002_49.m3u8?key=txiptv
+#EXTINF:-1 tvg-name="天津都市" tvg-logo="https://gh-proxy.com/https://raw.githubusercontent.com/fanmingming/live/main/tv/天津都市.png" group-title="☘️其他频道",天津都市
+http://sun135790.x3322.net:9901/tsfile/live/16005_1.m3u8?key=txiptv
+#EXTINF:-1 tvg-name="天津体育" tvg-logo="https://gh-proxy.com/https://raw.githubusercontent.com/fanmingming/live/main/tv/天津体育.png" group-title="☘️其他频道",天津体育
+http://sun135790.x3322.net:9901/tsfile/live/16006_1.m3u8?key=txiptv
+#EXTINF:-1 tvg-name="天津文艺" tvg-logo="https://gh-proxy.com/https://raw.githubusercontent.com/fanmingming/live/main/tv/天津文艺.png" group-title="☘️其他频道",天津文艺
+http://sun135790.x3322.net:9901/tsfile/live/16003_1.m3u8?key=txiptv
+#EXTINF:-1 tvg-name="天津新闻" tvg-logo="https://gh-proxy.com/https://raw.githubusercontent.com/fanmingming/live/main/tv/天津新闻.png" group-title="☘️其他频道",天津新闻
+http://sun135790.x3322.net:9901/tsfile/live/16002_1.m3u8?key=txiptv
