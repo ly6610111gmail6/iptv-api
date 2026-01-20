@@ -1,5 +1,5 @@
 🕘️更新时间,#genre#
-2026-01-20 13:02:57,https://live-auth.51kandianshi.com/szgd/csztv1.m3u8
+2026-01-20 13:24:16,https://live-auth.51kandianshi.com/szgd/csztv1.m3u8
 
 ☘️江苏频道,#genre#
 苏州新闻综合,https://live-auth.51kandianshi.com/szgd/csztv1.m3u8
@@ -308,14 +308,20 @@ CCTV17,http://182.37.41.46:8154/tsfile/live/0019_1.m3u8?key=txiptv
 浙江卫视,http://182.37.41.46:8154/tsfile/live/0124_1.m3u8?key=txiptv
 浙江卫视,http://39.77.164.174:9901/tsfile/live/0002_19.m3u8?key=txiptv
 
+☘️教育频道,#genre#
+CETV1,http://39.77.164.174:9901/tsfile/live/0002_46.m3u8?key=txiptv
+
 ☘️电影频道,#genre#
 CHC家庭影院,http://69.30.245.50/live/chcjt.m3u8
 CHC动作电影,http://69.30.245.50/live/chcdz.m3u8
 CHC动作电影,http://39.77.164.174:9901/tsfile/live/0002_68.m3u8?key=txiptv
 CHC影迷电影,http://69.30.245.50/live/chcym.m3u8
+天津影视,http://sun135790.x3322.net:9901/tsfile/live/16004_1.m3u8?key=txiptv
 
 ☘️动画频道,#genre#
 北京卡酷少儿,http://39.77.164.174:9901/tsfile/live/0002_47.m3u8?key=txiptv
+哈哈炫动,http://39.77.164.174:9901/tsfile/live/0002_48.m3u8?key=txiptv
+山东少儿,http://39.77.164.174:9901/tsfile/live/0002_54.m3u8?key=txiptv
 
 ☘️睛彩频道,#genre#
 睛彩广场舞,http://gslbserv.itv.cmvideo.cn:80/3000000020000011523/index.m3u8?channel-id=FifastbLive&Contentid=3000000020000011523&livemode=1&stbId=YanG-1989
@@ -406,4 +412,9 @@ CHC影迷电影,http://69.30.245.50/live/chcym.m3u8
 咪视界38,http://gslbserv.itv.cmvideo.cn:80/3000000020000011522/index.m3u8?channel-id=FifastbLive&Contentid=3000000020000011522&livemode=1&stbId=BingCha
 
 ☘️其他频道,#genre#
+山东农科,http://39.77.164.174:9901/tsfile/live/0002_55.m3u8?key=txiptv
 山东综艺,http://39.77.164.174:9901/tsfile/live/0002_49.m3u8?key=txiptv
+天津都市,http://sun135790.x3322.net:9901/tsfile/live/16005_1.m3u8?key=txiptv
+天津体育,http://sun135790.x3322.net:9901/tsfile/live/16006_1.m3u8?key=txiptv
+天津文艺,http://sun135790.x3322.net:9901/tsfile/live/16003_1.m3u8?key=txiptv
+天津新闻,http://sun135790.x3322.net:9901/tsfile/live/16002_1.m3u8?key=txiptv
