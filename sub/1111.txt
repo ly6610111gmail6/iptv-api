@@ -1,5 +1,8 @@
 #EXTM3U x-tvg-url="https://gitee.com/taksssss/tv/raw/main/epg/112114.xml.gz"
 
+#EXTINF:-1 tvg-logo="https://gongdian.top/tvbox/gongdian/logo.png" group-title="必看公告",卡顿怎么办
+https://gongdian.top/tv/iptv/tv.mp4
+
 #EXTINF:-1 tvg-logo="https://gcore.jsdelivr.net/gh/taksssss/tv/icon/CCTV1.png" group-title="央视频道",CCTV1
 http://69.30.245.50/live/cctv1.m3u8
 #EXTINF:-1 tvg-logo="https://gcore.jsdelivr.net/gh/taksssss/tv/icon/CCTV1.png" group-title="央视频道",CCTV1
