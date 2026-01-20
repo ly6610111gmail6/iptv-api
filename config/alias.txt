@@ -44,10 +44,10 @@ CCTV8K,re:CCTV[-\s]*0?8[Kk],CCTV-8K,CCTV8K 超高清,CCTV-8K超高清[3840*2160]
 百姓健康,CCTV卫生健康,CCTV-卫生健康,CCTV卫生与健康
 中学生,CCTV中学甿,CCTV中学生,CCTV-中学生,中央新影-中学甿,中央新影-中学生
 
-CETV-1,CETV1,CETV1中国教育,CETV1 中国教育,中国教育1,中国教育1HD
-CETV-2,CETV2,CETV2中国教育,CETV2 中国教育,中国教育2,中国教育2HD
-CETV-3,CETV3,CETV3中国教育,CETV3 中国教育,中国教育3,中国教育3HD
-CETV-4,CETV4,CETV4中国教育,CETV4 中国教育,中国教育4,中国教育4HD
+CETV1,CETV-1,CETV1中国教育,CETV1 中国教育,中国教育1,中国教育1HD
+CETV2,CETV-2,CETV2中国教育,CETV2 中国教育,中国教育2,中国教育2HD
+CETV3,CETV-3,CETV3中国教育,CETV3 中国教育,中国教育3,中国教育3HD
+CETV4,CETV-4,CETV4中国教育,CETV4 中国教育,中国教育4,中国教育4HD
 CETV早教,CETV早期教育,早期教育
 CGTN英语,CGTN英语新闻
 CGTN俄语,CGTN俄罗斯语
