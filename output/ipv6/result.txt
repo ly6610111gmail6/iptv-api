@@ -1,5 +1,5 @@
 🕘️更新时间,#genre#
-2026-03-25 23:21:12,https://live-auth.51kandianshi.com/szgd/csztv1.m3u8
+2026-03-25 23:59:39,https://live-auth.51kandianshi.com/szgd/csztv1.m3u8
 
 ☘️江苏频道,#genre#
 苏州新闻综合,https://live-auth.51kandianshi.com/szgd/csztv1.m3u8
@@ -15,6 +15,10 @@
 ☘️卫视频道,#genre#
 
 ☘️教育频道,#genre#
+CGTN,https://0472.org/hls/cgtn.m3u8
+CGTN西语,https://0472.org/hls/cgtnx.m3u8
+CGTN俄语,https://0472.org/hls/cgtne.m3u8
+CGTN阿语,https://0472.org/hls/cgtna.m3u8
 
 ☘️电影频道,#genre#
 
@@ -25,3 +29,7 @@
 ☘️咪视界,#genre#
 
 ☘️其他频道,#genre#
+
+☘️轮播,#genre#
+
+☘️历年春晚,#genre#
