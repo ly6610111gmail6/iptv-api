@@ -45,13 +45,13 @@
 #百姓健康,CCTV卫生健康,CCTV-卫生健康,CCTV卫生与健康
 #中学生,CCTV中学甿,CCTV中学生,CCTV-中学生,中央新影-中学甿,中央新影-中学生
 
-CETV-1,CETV1,CETV1中国教育,CETV1 中国教育,中国教育1,中国教育1HD
-CETV-2,CETV2,CETV2中国教育,CETV2 中国教育,中国教育2,中国教育2HD
-CETV-3,CETV3,CETV3中国教育,CETV3 中国教育,中国教育3,中国教育3HD
-CETV-4,CETV4,CETV4中国教育,CETV4 中国教育,中国教育4,中国教育4HD
-CETV早教,CETV早期教育,早期教育
-CGTN英语,CGTN英语新闻
-CGTN俄语,CGTN俄罗斯语
+#CETV-1,CETV1,CETV1中国教育,CETV1 中国教育,中国教育1,中国教育1HD
+#CETV-2,CETV2,CETV2中国教育,CETV2 中国教育,中国教育2,中国教育2HD
+#CETV-3,CETV3,CETV3中国教育,CETV3 中国教育,中国教育3,中国教育3HD
+#CETV-4,CETV4,CETV4中国教育,CETV4 中国教育,中国教育4,中国教育4HD
+#CETV早教,CETV早期教育,早期教育
+#CGTN英语,CGTN英语新闻
+#CGTN俄语,CGTN俄罗斯语
 
 广东珠江,GDTV-2,珠江,珠江频道,珠江台,广东珠江高清,珠江高清
 
