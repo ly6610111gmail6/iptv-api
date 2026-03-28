@@ -322,6 +322,11 @@ class UpdateSource:
                     clear_cache()
                     await self._run_speed_test()
                 else:
+                    # Add channel data to test_results when speed test is disabled
+                    for cate, channel_obj in self.channel_data.items():
+                        for name, info_list in channel_obj.items():
+                            for info in info_list:
+                                self.aggregator.add_item(cate, name, info, is_channel_last=False, is_last=False)
                     self.aggregator.is_last = True
                     await self.aggregator.flush_once(force=True)
 
