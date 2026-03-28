@@ -13,9 +13,20 @@ headers = {
 }
 
 
-def get_requests(url, data=None, proxy=None, timeout=30, custom_headers=None):
+def _merge_headers(custom: dict | None) -> dict:
+    """Return a new headers dict merging default headers with custom headers (custom wins)."""
+    result = headers.copy()
+    if custom:
+        for k, v in custom.items():
+            if v is None:
+                continue
+            result[k] = v
+    return result
+
+
+def get_requests(url, data=None, proxy=None, timeout=30, headers_override: dict | None = None):
     """
-    Get the response by requests
+    Get the response by requests. Accepts headers_override to set request headers.
     """
     if proxy is None:
         proxy = config.http_proxy
@@ -23,17 +34,13 @@ def get_requests(url, data=None, proxy=None, timeout=30, custom_headers=None):
     response = None
     try:
         with requests.Session() as session:
-            # 使用默认请求头和自定义请求头的合并
-            request_headers = headers.copy()
-            if custom_headers:
-                request_headers.update(custom_headers)
-                
+            req_headers = _merge_headers(headers_override)
             if data:
                 response = session.post(
-                    url, headers=request_headers, data=data, proxies=proxies, timeout=timeout
+                    url, headers=req_headers, data=data, proxies=proxies, timeout=timeout
                 )
             else:
-                response = session.get(url, headers=request_headers, proxies=proxies, timeout=timeout)
+                response = session.get(url, headers=req_headers, proxies=proxies, timeout=timeout)
     except requests.RequestException as e:
         raise e
 
@@ -47,11 +54,11 @@ def get_requests(url, data=None, proxy=None, timeout=30, custom_headers=None):
     return response
 
 
-def get_soup_requests(url, data=None, proxy=None, timeout=30, custom_headers=None):
+def get_soup_requests(url, data=None, proxy=None, timeout=30, headers_override: dict | None = None):
     """
-    Get the soup by requests
+    Get the soup by requests, pass headers_override to underlying call.
     """
-    response = get_requests(url, data, proxy, timeout, custom_headers)
+    response = get_requests(url, data, proxy, timeout, headers_override)
     source = re.sub(r"<!--.*?-->", "", response.text or "", flags=re.DOTALL)
     soup = BeautifulSoup(source, "html.parser")
     return soup
