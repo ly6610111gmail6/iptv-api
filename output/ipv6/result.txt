@@ -1,5 +1,5 @@
 🕘️更新时间,#genre#
-2026-06-03 22:59:02,https://live-auth.51kandianshi.com/szgd/csztv1.m3u8
+2026-06-04 08:00:28,https://live-auth.51kandianshi.com/szgd/csztv1.m3u8
 
 ☘️江苏频道,#genre#
 苏州新闻综合,https://live-auth.51kandianshi.com/szgd/csztv1.m3u8
