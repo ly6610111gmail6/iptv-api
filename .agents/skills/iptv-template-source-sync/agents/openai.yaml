@@ -1,0 +1,6 @@
+interface:
+  display_name: "IPTV 模板源同步"
+  short_description: "把订阅源新增频道追加到模板"
+  default_prompt: "Use $iptv-template-source-sync to merge missing channels from a specified source path into config/user_demo.txt."
+policy:
+  allow_implicit_invocation: true
