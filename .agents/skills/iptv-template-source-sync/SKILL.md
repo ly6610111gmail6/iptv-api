@@ -1,6 +1,6 @@
 ---
 name: iptv-template-source-sync
-description: Use when merging IPTV M3U or TXT source channel names into an IPTV-API template file, especially when the user gives a source path and asks to add only missing channels without deleting existing template entries.
+description: Use when merging IPTV M3U or TXT source channel names into an IPTV-API template file, especially when the user gives a local source path or online source URL with request headers and asks to add only missing channels without deleting existing template entries.
 ---
 
 # IPTV 模板源同步
@@ -9,7 +9,8 @@ description: Use when merging IPTV M3U or TXT source channel names into an IPTV-
 
 ## 适用场景
 
-- 用户给出 `sub/1.txt`、M3U、TXT 等源路径，要求检查模板中有没有新的频道。
+- 用户给出 `sub/1.txt`、M3U、TXT 等本地源路径，要求检查模板中有没有新的频道。
+- 用户给出在线源地址，并需要加 `User-Agent`、`Referer`、`Cookie` 等请求头后下载到本地再合并。
 - 用户要求“新增缺失频道”“不要删除”“同步到模板”。
 - 源文件是 `#EXTINF ... group-title="分类",频道名` 加 URL 的 M3U 格式。
 
@@ -21,6 +22,12 @@ description: Use when merging IPTV M3U or TXT source channel names into an IPTV-
 python .agents/skills/iptv-template-source-sync/scripts/sync_template_channels.py --source sub/1.txt --template config/user_demo.txt --dry-run
 ```
 
+在线源先下载到本地再预览：
+
+```powershell
+python .agents/skills/iptv-template-source-sync/scripts/sync_template_channels.py --source-url "https://example.com/live.m3u" --header "User-Agent: Mozilla/5.0" --header "Referer: https://example.com/" --download-to sub/online_source.txt --template config/user_demo.txt --dry-run
+```
+
 确认后写入模板：
 
 ```powershell
@@ -29,7 +36,11 @@ python .agents/skills/iptv-template-source-sync/scripts/sync_template_channels.p
 
 ## 参数
 
-- `--source`: 源文件路径，必填，可指定任意 M3U/TXT 源。
+- `--source`: 本地源文件路径；和 `--source-url` 二选一。
+- `--source-url`: 在线源地址；脚本会先下载到本地，再执行模板合并。
+- `--header`: 下载在线源时附加的请求头，格式为 `名称: 值`，可重复传入多个。
+- `--download-to`: 在线源下载保存路径，默认 `sub/online_source.txt`。
+- `--timeout`: 在线源下载超时时间，默认 30 秒。
 - `--template`: 模板文件路径，默认 `config/user_demo.txt`。
 - `--exclude-group`: 排除源分组，默认排除 `进QQ群`；可重复传入多个。
 - `--new-group-mode`: 源分组在模板中不存在时的处理方式，默认 `append`。

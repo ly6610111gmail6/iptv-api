@@ -9,6 +9,8 @@ from __future__ import annotations
 import argparse
 import re
 import sys
+import urllib.error
+import urllib.request
 from collections import OrderedDict
 from pathlib import Path
 
@@ -17,6 +19,19 @@ GENRE_SUFFIX = ",#genre#"
 DEFAULT_EXCLUDE_GROUPS = ("进QQ群",)
 URL_PATTERN = re.compile(r"^(https?|rtmp|rtsp)://", re.IGNORECASE)
 GROUP_PATTERN = re.compile(r'group-title="([^"]*)"')
+DEFAULT_DOWNLOAD_PATH = Path("sub/online_source.txt")
+
+
+def configure_text_output() -> None:
+    """配置控制台输出编码，避免 Windows GBK 环境打印 emoji 失败。
+
+    @author ly
+    @date 2026/06/13 22:22
+    """
+    for stream in (sys.stdout, sys.stderr):
+        if hasattr(stream, "reconfigure"):
+            # 技能会输出模板分类名，分类名前缀可能包含 emoji，需要 UTF-8 才能稳定打印。
+            stream.reconfigure(encoding="utf-8")
 
 
 def normalize_group_name(name: str) -> str:
@@ -47,6 +62,56 @@ def read_text(path: Path) -> str:
     @date 2026/06/10 20:00
     """
     return path.read_text(encoding="utf-8-sig")
+
+
+def parse_headers(raw_headers: list[str]) -> dict[str, str]:
+    """解析命令行传入的 HTTP 请求头。
+
+    Args:
+        raw_headers: 形如 ``名称: 值`` 的请求头列表。
+
+    Returns:
+        请求头字典。
+
+    @author ly
+    @date 2026/06/13 22:11
+    """
+    headers: dict[str, str] = {}
+    for raw_header in raw_headers:
+        if ":" not in raw_header:
+            raise ValueError(f"请求头格式错误，应为 '名称: 值': {raw_header}")
+        name, value = raw_header.split(":", 1)
+        name = name.strip()
+        value = value.strip()
+        if not name:
+            raise ValueError(f"请求头名称不能为空: {raw_header}")
+        headers[name] = value
+    return headers
+
+
+def download_source(source_url: str, download_to: Path, headers: dict[str, str], timeout: int) -> Path:
+    """下载在线源到本地文件。
+
+    Args:
+        source_url: 在线源地址。
+        download_to: 下载保存路径。
+        headers: HTTP 请求头。
+        timeout: 下载超时时间，单位秒。
+
+    Returns:
+        下载后的本地文件路径。
+
+    @author ly
+    @date 2026/06/13 22:11
+    """
+    download_to.parent.mkdir(parents=True, exist_ok=True)
+    request = urllib.request.Request(source_url, headers=headers)
+    with urllib.request.urlopen(request, timeout=timeout) as response:
+        # 直接保存原始字节，避免下载阶段错误改动源文件编码。
+        download_to.write_bytes(response.read())
+    print(f"已下载在线源: {source_url}")
+    print(f"保存到本地: {download_to}")
+    return download_to
 
 
 def parse_template(text: str) -> tuple[list[str], OrderedDict[str, list[str]], set[str]]:
@@ -262,10 +327,15 @@ def build_parser() -> argparse.ArgumentParser:
         参数解析器。
 
     @author ly
-    @date 2026/06/10 20:00
+    @date 2026/06/13 22:11
     """
     parser = argparse.ArgumentParser(description="将 IPTV 源文件中的新增频道追加到模板")
-    parser.add_argument("--source", required=True, help="源文件路径，例如 sub/1.txt")
+    source_group = parser.add_mutually_exclusive_group(required=True)
+    source_group.add_argument("--source", help="本地源文件路径，例如 sub/1.txt")
+    source_group.add_argument("--source-url", help="在线源地址，脚本会先下载到本地再合并")
+    parser.add_argument("--header", action="append", default=[], help="在线源请求头，格式为 '名称: 值'，可重复传入")
+    parser.add_argument("--download-to", default=str(DEFAULT_DOWNLOAD_PATH), help="在线源下载保存路径")
+    parser.add_argument("--timeout", type=int, default=30, help="在线源下载超时时间，单位秒")
     parser.add_argument("--template", default="config/user_demo.txt", help="模板文件路径")
     parser.add_argument("--exclude-group", action="append", default=list(DEFAULT_EXCLUDE_GROUPS), help="排除的源分组，可重复传入")
     parser.add_argument("--new-group-mode", choices=("append", "skip", "error"), default="append", help="未知分组处理方式")
@@ -280,13 +350,26 @@ def main() -> int:
         进程退出码。
 
     @author ly
-    @date 2026/06/10 20:00
+    @date 2026/06/13 22:11
     """
+    configure_text_output()
     args = build_parser().parse_args()
     template_path = Path(args.template)
-    source_path = Path(args.source)
+    source_path = Path(args.source) if args.source else None
 
-    if not source_path.exists():
+    if args.source_url:
+        try:
+            source_path = download_source(
+                source_url=args.source_url,
+                download_to=Path(args.download_to),
+                headers=parse_headers(args.header),
+                timeout=args.timeout,
+            )
+        except (OSError, ValueError, urllib.error.URLError) as exc:
+            print(f"下载在线源失败: {exc}", file=sys.stderr)
+            return 2
+
+    if source_path is None or not source_path.exists():
         print(f"源文件不存在: {source_path}", file=sys.stderr)
         return 2
     if not template_path.exists():
