@@ -117,7 +117,7 @@
 > 1. 对于开启显示接口信息，由于部分播放器（如`PotPlayer`）不支持解析接口补充信息，导致无法正常播放，可修改配置:`open_url_info
 =False`（GUI：取消勾选显示接口信息）关闭该功能
 > 2. 如果你的网络确定支持IPv6，可修改配置:`ipv6_support = True`(GUI：勾选`强制认为当前网络支持IPv6`）跳过支持性检查
-> 3. 如需为接口指定播放/测速请求头，可配置全局 `user_agent`（统一 UA），或在 `config/subscribe.txt` 的订阅地址后追加 `UA=值`（针对单个订阅源）；UA 会写入 `.m3u` 结果，无需开启 `open_headers`
+> 3. 如需为接口指定播放/测速请求头，可配置全局 `user_agent`（统一 UA），或在 `config/subscribe.txt` 的订阅地址后追加 `UA=值`（针对单个订阅源）；UA 默认会写入 `.m3u` 结果，无需开启 `open_headers`。如仅在拉取订阅时使用，可设置 `open_subscribe_headers_to_channels = False`
 > 4. 配置 `location`（归属地）/`isp`（运营商）后，默认会直接过滤掉不匹配的接口；若开启 `open_supply = True`，不匹配的接口将不再丢弃，而是降权排到该频道结果末尾作为补充，避免可用接口被误删
 > 5. 通过 `sort_by` 自定义每个频道内接口的排序优先级，逗号分隔，可选 `speed`（速率）、`delay`（延迟）、`resolution`（分辨率），按从前到后依次比较，例如 `resolution,speed` 表示优先按分辨率、其次按速率排序
 
@@ -135,7 +135,7 @@
   https://example.com/sub2.m3u UA="Mozilla/5.0 xxx"
   ```
 
-  该 `UA` 会同时用于：拉取该订阅内容、对该订阅源下各接口测速、以及写入 `.m3u` 结果（供播放器使用），无需开启 `open_headers`。若希望对所有接口统一指定一个 UA（避免逐条添加），可在配置中设置全局 `user_agent`。优先级：接口自带 UA（m3u 内含 `#EXTVLCOPT`）> 订阅地址 UA > 全局 `user_agent` > 内置默认 UA。注意：请求头只能写入 `.m3u` 结果，`.txt` 格式无法携带 UA。
+  该 `UA` 默认会同时用于：拉取该订阅内容、对该订阅源下各接口测速、以及写入 `.m3u` 结果（供播放器使用），无需开启 `open_headers`。设置 `open_subscribe_headers_to_channels = False` 后，订阅地址配置的请求头仅用于拉取订阅内容，不会传递给频道测速或写入 `.m3u` 结果。若希望对所有接口统一指定一个 UA（避免逐条添加），可在配置中设置全局 `user_agent`。优先级：接口自带 UA（m3u 内含 `#EXTVLCOPT`）> 订阅地址 UA > 全局 `user_agent` > 内置默认 UA。注意：请求头只能写入 `.m3u` 结果，`.txt` 格式无法携带 UA。
 
 
 - 本地源（`config/local.txt`）

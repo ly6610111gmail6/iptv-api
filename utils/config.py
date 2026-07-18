@@ -267,6 +267,18 @@ class ConfigManager:
         return self.config.getboolean("Settings", "open_headers", fallback=True)
 
     @property
+    def open_subscribe_headers_to_channels(self):
+        """获取是否将订阅请求头传递给频道测速及 M3U 结果。
+
+        Returns:
+            是否将订阅请求头传递给频道数据。
+
+        @author ly
+        @date 2026/07/18 14:01
+        """
+        return self.config.getboolean("Settings", "open_subscribe_headers_to_channels", fallback=True)
+
+    @property
     def user_agent(self):
         return self.config.get("Settings", "user_agent", fallback="").strip()
 

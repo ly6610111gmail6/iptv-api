@@ -136,7 +136,8 @@ Adjust the configuration as needed, here is the default configuration descriptio
      `Force assume the current network supports IPv6`) to skip the support check.
 > 3. To specify request headers for playback/speed testing, configure the global `user_agent` (a unified UA), or append
      `UA=value` after a subscription URL in `config/subscribe.txt` (for a single subscription source); the UA is written
-     into the `.m3u` result without enabling `open_headers`.
+     into the `.m3u` result without enabling `open_headers`. Set `open_subscribe_headers_to_channels = False` to use it
+     only while fetching subscription content.
 > 4. After configuring `location` / `isp`, non-matching interfaces are filtered out directly by default; if you enable
      `open_supply = True`, non-matching interfaces are no longer dropped but downranked to the end of the channel result
      as a supplement, avoiding the accidental removal of usable interfaces.
@@ -162,7 +163,9 @@ Adjust the configuration as needed, here is the default configuration descriptio
   ```
 
   This `UA` is used for: fetching the subscription content, speed testing the interfaces under that subscription, and
-  writing into the `.m3u` result (for players) — no need to enable `open_headers`. If you want to apply one UA to all
+  writing into the `.m3u` result (for players) — no need to enable `open_headers`. Set
+  `open_subscribe_headers_to_channels = False` to use it only while fetching subscription content, without passing it
+  to channel speed tests or `.m3u` results. If you want to apply one UA to all
   interfaces (instead of adding it one by one), set the global `user_agent` in the configuration. Priority: interface's
   own UA (`#EXTVLCOPT` embedded in m3u) > subscription URL UA > global `user_agent` > built-in default UA. Note: request
   headers can only be written into the `.m3u` result; the `.txt` format cannot carry a UA.

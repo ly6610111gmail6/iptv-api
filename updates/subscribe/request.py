@@ -53,8 +53,20 @@ async def get_channels_by_subscribe_urls(
         callback=None,
         epg_urls_out=None,
 ):
-    """
-    Get the channels by subscribe urls
+    """通过订阅地址获取频道数据。
+
+    Args:
+        urls: 订阅地址及其请求头配置。
+        names: 允许匹配的频道名称。
+        whitelist: 无需测速的白名单订阅地址。
+        callback: 进度回调函数。
+        epg_urls_out: 用于收集订阅内 EPG 地址的集合。
+
+    Returns:
+        按频道名称聚合的频道数据。
+
+    @author ly
+    @date 2026/07/18 14:01
     """
     normalized_names = {format_channel_name(name) for name in (names or []) if name}
     if whitelist:
@@ -85,6 +97,7 @@ async def get_channels_by_subscribe_urls(
     logger = get_logger(constants.unmatch_log_path, level=INFO, init=True)
     request_timeout = config.request_timeout
     open_headers = config.open_headers
+    open_subscribe_headers_to_channels = config.open_subscribe_headers_to_channels
     open_unmatch_category = config.open_unmatch_category
     open_auto_disable_source = config.open_auto_disable_source
     open_subscribe_epg = config.open_subscribe_epg
@@ -104,6 +117,17 @@ async def get_channels_by_subscribe_urls(
         print(t("msg.auto_disable_source").format(name=mode_name, url=source_url, reason=reason), flush=True)
 
     def process_subscribe_channels(subscribe_info: str | dict) -> defaultdict:
+        """拉取并解析单个订阅源。
+
+        Args:
+            subscribe_info: 订阅地址及其请求头配置。
+
+        Returns:
+            按频道名称聚合的当前订阅频道数据。
+
+        @author ly
+        @date 2026/07/18 14:01
+        """
         nonlocal unmatched_logged
         subscribe_url = subscribe_info.get('url') if isinstance(subscribe_info, dict) else subscribe_info
         source_url = subscribe_info.get('source_url', subscribe_url) if isinstance(subscribe_info,
@@ -170,7 +194,9 @@ async def get_channels_by_subscribe_urls(
                             url_partition = url.partition("$")
                             url = url_partition[0]
                             info = url_partition[2]
-                            item_headers = {**(headers or {}), **(item.get("headers") or {})}
+                            # 订阅请求头可仅用于拉取订阅，避免频道测速和播放误用订阅站点要求的请求头。
+                            inherited_headers = headers if open_subscribe_headers_to_channels else None
+                            item_headers = {**(inherited_headers or {}), **(item.get("headers") or {})}
                             value = {
                                 "url": url,
                                 "headers": item_headers or None,
