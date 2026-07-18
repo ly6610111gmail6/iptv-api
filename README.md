@@ -117,6 +117,7 @@
 | open_update_time         | 开启显示更新时间                                                                                                             | True                                     |
 | open_url_info            | 开启显示接口说明信息，用于控制是否显示接口来源、分辨率、协议类型等信息，为 $ 符号后的内容，播放软件使用该信息对接口进行描述，若部分播放器（如 PotPlayer）不支持解析导致无法播放可关闭                    | False                                    |
 | open_epg                 | 开启 EPG 功能，支持频道显示预告内容                                                                                                 | True                                     |
+| m3u_epg_url              | M3U 文件头部使用的 EPG 完整地址，留空时使用程序生成的 EPG 地址                                                                                 |                                          |
 | open_subscribe_epg       | 开启从订阅源 m3u 头部 url-tvg/x-tvg-url 自动提取 EPG 地址，并入 EPG 源一起合并，无需手动维护 `config/epg.txt`；epg.txt 源优先，订阅源仅补充未覆盖频道；需 open_epg = True | True                                     |
 | open_m3u_result          | 开启转换生成 m3u 文件类型结果链接，支持显示频道图标                                                                                         | True                                     |
 | urls_limit               | 单个频道接口数量                                                                                                             | 5                                        |

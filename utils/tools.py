@@ -414,9 +414,17 @@ def get_public_url(port: int = config.public_port) -> str:
 
 
 def get_epg_url():
+    """获取 M3U 文件头部使用的 EPG 地址。
+
+    Returns:
+        用户配置的 EPG 地址，或程序生成的默认 EPG 地址。
+
+    @author ly
+    @date 2026/07/18 12:58
     """
-    Get the epg result url
-    """
+    # 用户显式配置时直接使用目标地址，避免播放器继续访问本地生成的 EPG 文件。
+    if config.m3u_epg_url:
+        return config.m3u_epg_url
     if os.getenv("GITHUB_ACTIONS"):
         repository = os.getenv("GITHUB_REPOSITORY", "Guovin/iptv-api")
         ref = os.getenv("GITHUB_REF", "gd")

@@ -275,6 +275,18 @@ class ConfigManager:
         return self.config.getboolean("Settings", "open_epg", fallback=True)
 
     @property
+    def m3u_epg_url(self):
+        """获取 M3U 文件头部使用的自定义 EPG 地址。
+
+        Returns:
+            自定义 EPG 地址；未配置时返回空字符串。
+
+        @author ly
+        @date 2026/07/18 12:58
+        """
+        return self.config.get("Settings", "m3u_epg_url", fallback="").strip()
+
+    @property
     def open_subscribe_epg(self):
         return self.config.getboolean("Settings", "open_subscribe_epg", fallback=True)
 
