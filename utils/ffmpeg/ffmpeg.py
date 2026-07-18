@@ -29,7 +29,7 @@ def check_ffmpeg_installed_status():
             print(t("msg.ffmpeg_installed"))
         else:
             print(t("msg.ffmpeg_not_installed"))
-        return status
+    return status
 
 
 async def ffmpeg_url(url, headers=None, timeout=10):
@@ -38,7 +38,7 @@ async def ffmpeg_url(url, headers=None, timeout=10):
     """
     headers_str = "".join(f"{k}: {v}\r\n" for k, v in (headers or {}).items())
 
-    args = ["ffmpeg", "-t", str(timeout)]
+    args = ["ffmpeg", "-nostdin", "-threads", "1", "-t", str(timeout)]
     if headers_str:
         args += ["-headers", headers_str]
     args += ["-http_persistent", "0", "-stats", "-i", url, "-f", "null", "-"]
@@ -149,8 +149,8 @@ async def ffmpeg_url(url, headers=None, timeout=10):
                 await proc.wait()
             except Exception:
                 pass
-        stderr_bytes = b"".join(stderr_parts)
-        try:
-            return stderr_bytes.decode(errors="ignore")
-        except Exception:
-            return None
+    stderr_bytes = b"".join(stderr_parts)
+    try:
+        return stderr_bytes.decode(errors="ignore")
+    except Exception:
+        return None

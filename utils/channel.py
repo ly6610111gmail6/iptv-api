@@ -1,7 +1,6 @@
 import asyncio
 import gzip
 import hashlib
-import json
 import math
 import os
 import pickle
@@ -15,13 +14,13 @@ from typing import cast
 import utils.constants as constants
 from utils.alias import Alias
 from utils.config import config
-from utils.db import ensure_result_data_schema
-from utils.db import get_db_connection, return_db_connection
+from utils.db import sync_result_data
 from utils.ffmpeg import check_ffmpeg_installed_status
 from utils.frozen import is_url_frozen, mark_url_bad, mark_url_good
 from utils.i18n import t
 from utils.ip_checker import IPChecker
 from utils.speed import (
+    create_speed_test_session,
     get_speed,
     get_speed_result,
     get_sort_result
@@ -56,6 +55,7 @@ channel_alias = Alias()
 ip_checker = IPChecker()
 location_list = config.location
 isp_list = config.isp
+open_supply = config.open_supply
 open_filter_speed = config.open_filter_speed
 min_speed = config.min_speed
 open_filter_resolution = config.open_filter_resolution
@@ -68,6 +68,19 @@ retain_origin = ["whitelist", "hls"]
 
 _TOTAL_URLS_CACHE_MAX_SIZE = 2048
 _TOTAL_URLS_CACHE = OrderedDict()
+
+
+class _LimitedLogger:
+    def __init__(self, logger, limit):
+        self.logger = logger
+        self.limit = limit
+        self.count = 0
+
+    def info(self, *args, **kwargs):
+        if self.count >= self.limit:
+            return
+        self.count += 1
+        self.logger.info(*args, **kwargs)
 
 
 def _build_total_urls_signature(info_list: list[ChannelData]) -> str:
@@ -470,6 +483,7 @@ def append_data_to_info_data(
             isp = item.get("isp")
             headers = item.get("headers")
             catchup = item.get("catchup")
+            tvg_logo = item.get("tvg_logo")
             extra_info = item.get("extra_info", "")
 
             if not raw_url:
@@ -515,6 +529,7 @@ def append_data_to_info_data(
                         "isp": isp,
                         "headers": headers,
                         "catchup": catchup,
+                        "tvg_logo": tvg_logo,
                         "extra_info": extra_info
                     }
                     continue
@@ -522,6 +537,7 @@ def append_data_to_info_data(
                     continue
 
             url = normalized_url
+            supply = False
 
             if url_origin not in retain_origin:
                 if not skip_validation:
@@ -542,10 +558,14 @@ def append_data_to_info_data(
                             location, isp = ip_checker.find_map(ip)
 
                     if location and location_list and not any(item in location for item in location_list):
-                        continue
+                        if not open_supply:
+                            continue
+                        supply = True
 
                     if isp and isp_list and not any(item in isp for item in isp_list):
-                        continue
+                        if not open_supply:
+                            continue
+                        supply = True
 
             channel_list.append({
                 "id": channel_id,
@@ -561,7 +581,9 @@ def append_data_to_info_data(
                 "isp": isp,
                 "headers": headers,
                 "catchup": catchup,
-                "extra_info": extra_info
+                "tvg_logo": tvg_logo,
+                "extra_info": extra_info,
+                "supply": supply
             })
             existing_map[url] = len(channel_list) - 1
 
@@ -733,23 +755,16 @@ async def test_speed(data, ipv6=False, callback=None, on_task_complete=None):
     Test speed of channel data
     """
     ipv6_proxy_url = None if (not config.open_ipv6 or ipv6) else constants.ipv6_proxy
-    open_headers = config.open_headers
     open_full_speed_test = config.open_full_speed_test
     get_resolution = config.open_filter_resolution and check_ffmpeg_installed_status()
-    semaphore = asyncio.Semaphore(config.speed_test_limit)
-    logger = get_logger(constants.speed_test_log_path, level=INFO, init=True)
-    result_logger = get_logger(constants.result_log_path, level=INFO, init=True)
-
-    async def limited_get_speed(channel_info):
-        async with semaphore:
-            headers = (open_headers and channel_info.get("headers")) or None
-            return await get_speed(
-                channel_info,
-                headers=headers,
-                ipv6_proxy=ipv6_proxy_url,
-                filter_resolution=get_resolution,
-                logger=logger,
-            )
+    performance = config.performance_settings
+    concurrency = performance.speed_test_concurrency
+    http_semaphore = asyncio.Semaphore(concurrency)
+    probe_semaphore = asyncio.Semaphore(performance.probe_concurrency)
+    speed_log_handler = get_logger(constants.speed_test_log_path, level=INFO, init=True)
+    result_log_handler = get_logger(constants.result_log_path, level=INFO, init=True)
+    logger = _LimitedLogger(speed_log_handler, 10000)
+    result_logger = _LimitedLogger(result_log_handler, 10000)
 
     total_tasks = sum(len(info_list) for channel_obj in data.values() for info_list in channel_obj.values())
     total_tasks_by_channel = defaultdict(int)
@@ -757,42 +772,14 @@ async def test_speed(data, ipv6=False, callback=None, on_task_complete=None):
         for name, info_list in channel_obj.items():
             total_tasks_by_channel[(cate, name)] += len(info_list)
     completed = 0
-    tasks = []
-    channel_map = {}
     grouped_results = {}
     completed_by_channel = defaultdict(int)
     urls_limit = config.urls_limit
     valid_count_by_channel = defaultdict(int)
+    stopped_channels = set()
 
-    def _cancel_remaining_channel_tasks(cate, name):
-        for task, meta in list(channel_map.items()):
-            if task.done():
-                continue
-            t_cate, t_name, _ = meta
-            if t_cate == cate and t_name == name:
-                try:
-                    task.cancel()
-                except Exception:
-                    pass
-
-    def _on_task_done(task):
+    def handle_result(cate, name, info, result):
         nonlocal completed
-        try:
-            if task.cancelled():
-                result = {}
-            else:
-                try:
-                    result = task.result()
-                except asyncio.CancelledError:
-                    result = {}
-                except Exception:
-                    result = {}
-        except Exception:
-            result = {}
-        meta = channel_map.get(task)
-        if not meta:
-            return
-        cate, name, info = meta
         if cate not in grouped_results:
             grouped_results[cate] = {}
         if name not in grouped_results[cate]:
@@ -806,10 +793,12 @@ async def test_speed(data, ipv6=False, callback=None, on_task_complete=None):
             mark_url_good(merged.get("url"))
 
         is_valid = is_valid_speed_result(merged)
+        reached_limit = False
         if is_valid:
             valid_count_by_channel[(cate, name)] += 1
             if not open_full_speed_test and valid_count_by_channel[(cate, name)] >= urls_limit:
-                _cancel_remaining_channel_tasks(cate, name)
+                stopped_channels.add((cate, name))
+                reached_limit = valid_count_by_channel[(cate, name)] == urls_limit
 
             try:
                 origin = merged.get('origin')
@@ -830,7 +819,7 @@ async def test_speed(data, ipv6=False, callback=None, on_task_complete=None):
         completed += 1
         completed_by_channel[(cate, name)] += 1
 
-        is_channel_last = completed_by_channel[(cate, name)] >= total_tasks_by_channel.get((cate, name), 0)
+        is_channel_last = reached_limit or completed_by_channel[(cate, name)] >= total_tasks_by_channel.get((cate, name), 0)
         is_last = completed >= total_tasks
 
         if on_task_complete:
@@ -845,20 +834,60 @@ async def test_speed(data, ipv6=False, callback=None, on_task_complete=None):
             except Exception:
                 pass
 
-    for cate, channel_obj in data.items():
-        for name, info_list in channel_obj.items():
-            for info in info_list:
-                info['name'] = name
-                task = asyncio.create_task(limited_get_speed(info))
-                channel_map[task] = (cate, name, info)
-                task.add_done_callback(_on_task_done)
-                tasks.append(task)
+    def iter_items():
+        for cate, channel_obj in data.items():
+            for name, info_list in channel_obj.items():
+                for info in info_list:
+                    info['name'] = name
+                    yield cate, name, info
 
-    if tasks:
-        await asyncio.gather(*tasks, return_exceptions=True)
+    item_iterator = iter(iter_items())
+    skipped = 0
 
-    close_logger_handlers(logger)
-    close_logger_handlers(result_logger)
+    async with create_speed_test_session(concurrency) as session:
+        async def worker():
+            nonlocal skipped
+            while True:
+                try:
+                    cate, name, info = next(item_iterator)
+                except StopIteration:
+                    return
+
+                if (cate, name) in stopped_channels:
+                    skipped += 1
+                    continue
+                result = {}
+                try:
+                    async with asyncio.timeout(config.speed_test_timeout):
+                        result = await get_speed(
+                            info,
+                            headers=info.get("headers") or None,
+                            ipv6_proxy=ipv6_proxy_url,
+                            filter_resolution=get_resolution,
+                            timeout=config.speed_test_timeout,
+                            logger=logger,
+                            session=session,
+                            http_semaphore=http_semaphore,
+                            probe_semaphore=probe_semaphore,
+                        )
+                except TimeoutError:
+                    result = {}
+                except Exception:
+                    result = {}
+                handle_result(cate, name, info, result)
+
+        workers = [
+            asyncio.create_task(worker())
+            for _ in range(min(concurrency, total_tasks))
+        ]
+        if workers:
+            await asyncio.gather(*workers)
+
+    if skipped and callback:
+        callback(skipped)
+
+    close_logger_handlers(speed_log_handler)
+    close_logger_handlers(result_log_handler)
     return grouped_results
 
 
@@ -965,6 +994,9 @@ def generate_channel_statistic(logger, cate, name, values):
         print(f"📊 {content}")
 
 
+_WRITTEN_CONTENT_DIGESTS = {}
+
+
 def process_write_content(
         path: str,
         data: CategoryChannelData,
@@ -1027,6 +1059,26 @@ def process_write_content(
             end_char = ", " if i < len(no_result_name) - 1 else ""
             custom_print(name, end=end_char)
             content += f"\n{name},url"
+    render_hasher = hashlib.sha256(content.encode("utf-8"))
+    render_hasher.update(
+        repr((
+            is_last,
+            first_channel_name,
+            config.open_epg,
+            config.open_update_time,
+            config.update_time_position,
+            config.logo_url,
+            config.logo_type,
+            config.open_subscribe_logo,
+            config.user_agent,
+            config.cdn_url,
+            get_public_url(),
+        )).encode("utf-8")
+    )
+    render_signature = render_hasher.digest()
+    m3u_path = os.path.splitext(path)[0] + ".m3u"
+    if _WRITTEN_CONTENT_DIGESTS.get(path) == render_signature and os.path.exists(path) and os.path.exists(m3u_path):
+        return False
     if config.open_update_time:
         update_time_item = next(
             (urls[0] for channel_obj in data.values()
@@ -1050,39 +1102,6 @@ def process_write_content(
             content = f"{update_title},#genre#\n{now},{value}\n\n{content}"
         else:
             content += f"\n\n{update_title},#genre#\n{now},{value}"
-    if hls_url:
-        db_dir = os.path.dirname(constants.rtmp_data_path)
-        if db_dir:
-            os.makedirs(db_dir, exist_ok=True)
-
-        try:
-            ensure_result_data_schema(constants.rtmp_data_path)
-            conn = get_db_connection(constants.rtmp_data_path)
-        except Exception as e:
-            print(t("msg.write_error").format(info=f"open rtmp db error: {e}"))
-        else:
-            try:
-                cursor = conn.cursor()
-                cursor.execute(
-                    "CREATE TABLE IF NOT EXISTS result_data (id TEXT PRIMARY KEY, url TEXT, headers TEXT, video_codec TEXT, audio_codec TEXT, resolution TEXT, fps REAL)"
-                )
-                for data_list in result_data.values():
-                    for item in data_list:
-                        cursor.execute(
-                            "INSERT OR REPLACE INTO result_data (id, url, headers, video_codec, audio_codec, resolution, fps) VALUES (?, ?, ?, ?, ?, ?, ?)",
-                            (
-                                str(item.get("id")),
-                                item.get("url"),
-                                json.dumps(item.get("headers", None)),
-                                item.get("video_codec"),
-                                item.get("audio_codec"),
-                                item.get("resolution"),
-                                item.get("fps"),
-                            )
-                        )
-                conn.commit()
-            finally:
-                return_db_connection(constants.rtmp_data_path, conn)
     try:
         target_dir = os.path.dirname(path) or "."
         os.makedirs(target_dir, exist_ok=True)
@@ -1103,9 +1122,11 @@ def process_write_content(
             print(t("msg.write_error").format(info=e), flush=True)
             return
     try:
-        convert_to_m3u(path, first_channel_name, data=result_data)
+        convert_to_m3u(path, first_channel_name, data=result_data, content=content)
+        _WRITTEN_CONTENT_DIGESTS[path] = render_signature
     except Exception as e:
         print(t("msg.write_error").format(info=f"convert m3u error: {e}"), flush=True)
+    return True
 
 
 def write_channel_to_file(data, ipv6=False, first_channel_name=None, skip_print=False, is_last=False):
@@ -1140,11 +1161,31 @@ def write_channel_to_file(data, ipv6=False, first_channel_name=None, skip_print=
                     "ipv_type_prefer": ["ipv6"]
                 },
             ]
+            rtmp_rows = {}
+            unmatch_category = t("content.unmatch_channel")
+            for file in file_list:
+                if not file.get("hls_url"):
+                    continue
+                file_ipv_type_prefer = file.get("ipv_type_prefer", ipv_type_prefer)
+                for cate, channel_obj in data.items():
+                    for info_list in channel_obj.values():
+                        channel_urls = _get_total_urls_cached(
+                            info_list,
+                            file_ipv_type_prefer,
+                            origin_type_prefer,
+                            ["hls"],
+                            apply_limit=cate != unmatch_category,
+                        )
+                        for item in channel_urls:
+                            item_id = item.get("id")
+                            if item_id is not None:
+                                rtmp_rows[str(item_id)] = item
+        hls_changed = False
         for file in file_list:
             target_dir = os.path.dirname(file["path"])
             if target_dir:
                 os.makedirs(target_dir, exist_ok=True)
-            process_write_content(
+            changed = process_write_content(
                 path=file["path"],
                 data=data,
                 hls_url=file.get("hls_url"),
@@ -1155,6 +1196,13 @@ def write_channel_to_file(data, ipv6=False, first_channel_name=None, skip_print=
                 enable_log=file.get("enable_log", False),
                 is_last=is_last
             )
+            if file.get("hls_url") and changed:
+                hls_changed = True
+        if hls_changed:
+            try:
+                sync_result_data(constants.rtmp_data_path, rtmp_rows.values())
+            except Exception as e:
+                print(t("msg.write_error").format(info=e), flush=True)
         if not skip_print:
             print(t("msg.write_success"), flush=True)
     except Exception as e:

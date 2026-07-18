@@ -1,5 +1,6 @@
 {
   "msg.version_info": "⚡\uFE0F {name} Version: {version} (Build time: {build_time})",
+  "msg.performance_settings": "⚙️ Performance mode: {mode} → {resolved}, available resources: {cpu} CPU / {memory} GB, concurrency: speed test {speed}, media probe {probe}, source fetch {fetch}",
   "msg.check_ipv6_support": "\uD83D\uDEDC Checking whether the current network supports IPv6...",
   "msg.ipv6_supported": "✅ The current network supports IPv6!",
   "msg.ipv6_not_supported": "⚠\uFE0F The current network does not support IPv6. Don't worry. The results of IPv6 will be saved",
@@ -18,6 +19,7 @@
   "msg.channel_logo_found": "✅ Local channel logo count: {count}",
   "msg.subscribe_urls_whitelist_total": "✅ Subscribe urls count: {default_count}, subscribe whitelist count: {whitelist_count}, disabled count: {disabled_count}, active total count: {total}",
   "msg.epg_urls_whitelist_total": "✅ EPG urls count: {default_count}, EPG whitelist count: {whitelist_count}, disabled count: {disabled_count}, active total count: {total}",
+  "msg.subscribe_epg_found": "📡 Found {count} EPG urls from subscribe sources",
   "msg.no_subscribe_urls": "❌ No valid subscribe urls found! Please check the {file}, you need to add subscribe urls to get the subscribe sources!",
   "msg.auto_disable_source": "⛔ {name} source disabled automatically: {url} ({reason})",
   "msg.auto_disable_source_done": "\uD83C\uDD97 {name}: ✅ Active count: {active_count}, ⛔ Disabled count: {disabled_count}",
@@ -83,6 +85,7 @@
   "pbar.source": "source",
   "pbar.getting_name": "\uD83D\uDD0D Getting {name}",
   "pbar.name_search": "{name} search",
+  "ui.performance_mode": "Performance:",
   "name.whitelist": "Whitelist",
   "name.local": "Local",
   "name.hls": "HLS",

@@ -72,11 +72,11 @@ class UpdateSource:
     # ----------------------------
     # progress / pbar
     # ----------------------------
-    def pbar_update(self, name: str = "", item_name: str = ""):
+    def pbar_update(self, name: str = "", item_name: str = "", count: int = 1):
         if not self.pbar:
             return
         if self.pbar.n < self.total:
-            self.pbar.update()
+            self.pbar.update(min(max(1, count), self.total - self.pbar.n))
             remaining_total = self.total - self.pbar.n
             remaining_time = get_pbar_remaining(n=self.pbar.n, total=self.total, start_time=self.start_time)
             if self.update_progress:
@@ -129,7 +129,7 @@ class UpdateSource:
     # ----------------------------
     # stage 2: fetch subscribe/epg (concurrent)
     # ----------------------------
-    async def _fetch_subscribe(self, channel_names: list[str]):
+    async def _fetch_subscribe(self, channel_names: list[str], epg_urls_out: set = None):
         whitelist_entries, default_entries = get_subscribe_entries(constants.subscribe_path)
         disabled_count = count_disabled_urls(constants.subscribe_path)
 
@@ -163,21 +163,38 @@ class UpdateSource:
             names=channel_names,
             whitelist=whitelist_urls,
             callback=self.update_progress,
+            epg_urls_out=epg_urls_out,
         )
 
-    async def _fetch_epg(self, channel_names: list[str]):
-        return await get_epg(channel_names, callback=self.update_progress)
+    async def _fetch_epg(self, channel_names: list[str], extra_entries: list = None):
+        return await get_epg(channel_names, callback=self.update_progress, extra_entries=extra_entries)
 
     async def visit_page(self, channel_names: list[str] = None):
         """
         Visits subscribe and epg pages concurrently to fetch data.
         """
         channel_names = channel_names or []
+        open_subscribe = config.open_method.get("subscribe")
+        open_epg = config.open_method.get("epg")
+
+        if open_subscribe and open_epg and config.open_subscribe_epg:
+            discovered_epg_urls: set[str] = set()
+            try:
+                self.subscribe_result = await self._fetch_subscribe(channel_names, epg_urls_out=discovered_epg_urls)
+            except Exception as e:
+                print(f"subscribe_result failed: {e}", flush=True)
+                self.subscribe_result = {}
+            try:
+                self.epg_result = await self._fetch_epg(channel_names, extra_entries=sorted(discovered_epg_urls))
+            except Exception as e:
+                print(f"epg_result failed: {e}", flush=True)
+                self.epg_result = {}
+            return
 
         cors: list[tuple[str, asyncio.Future]] = []
-        if config.open_method.get("subscribe"):
+        if open_subscribe:
             cors.append(("subscribe_result", asyncio.create_task(self._fetch_subscribe(channel_names))))
-        if config.open_method.get("epg"):
+        if open_epg:
             cors.append(("epg_result", asyncio.create_task(self._fetch_epg(channel_names))))
 
         if not cors:
@@ -205,15 +222,22 @@ class UpdateSource:
             base_data=self.channel_data,
             first_channel_name=self.channel_names[0] if self.channel_names else None,
             ipv6_support=self.ipv6_support,
-            write_interval=2.0,
+            write_interval=10.0,
+            flush_debounce=2.0,
+            min_items_before_flush=max(25, config.urls_limit),
             result=cache,
         )
         await self.aggregator.start()
 
     async def _stop_aggregator(self):
         if self.aggregator:
-            await self.aggregator.stop()
-            self.aggregator = None
+            aggregator = self.aggregator
+            try:
+                await aggregator.stop()
+                return aggregator.result
+            finally:
+                self.aggregator = None
+        return {}
 
     # ----------------------------
     # stage 4: speed test
@@ -241,7 +265,6 @@ class UpdateSource:
 
         if self.total <= 0:
             self.aggregator.is_last = True
-            await self.aggregator.flush_once(force=True)
             return {}
         if self.update_progress:
             self.update_progress(
@@ -254,17 +277,23 @@ class UpdateSource:
             total=self.total,
             desc=t("pbar.speed_test"),
             file=sys.stdout,
-            mininterval=0,
+            mininterval=1.0,
             miniters=1,
             dynamic_ncols=False,
         )
         try:
-            return await test_speed(
+            result = await test_speed(
                 test_data,
                 ipv6=self.ipv6_support,
-                callback=lambda: self.pbar_update(name=t("pbar.speed_test"), item_name=t("pbar.url")),
+                callback=lambda count=1: self.pbar_update(
+                    name=t("pbar.speed_test"),
+                    item_name=t("pbar.url"),
+                    count=count,
+                ),
                 on_task_complete=self.aggregator.add_item,
             )
+            self.aggregator.is_last = True
+            return result
         finally:
             if self.pbar:
                 self.pbar.close()
@@ -304,6 +333,19 @@ class UpdateSource:
     async def main(self):
         try:
             main_start_time = time()
+            performance = config.performance_settings
+            print(
+                t("msg.performance_settings").format(
+                    mode=performance.requested_mode,
+                    resolved=performance.resolved_mode,
+                    cpu=performance.cpu_count,
+                    memory=performance.memory_gb,
+                    speed=performance.speed_test_concurrency,
+                    probe=performance.probe_concurrency,
+                    fetch=performance.fetch_workers,
+                ),
+                flush=True,
+            )
 
             self._prepare_channel_data()
 
@@ -334,13 +376,12 @@ class UpdateSource:
                 else:
                     self.aggregator.test_results = self.channel_data
                     self.aggregator.is_last = True
-                    await self.aggregator.flush_once(force=True)
 
             finally:
+                final_result = await self._stop_aggregator()
                 if config.open_history:
-                    self._save_cache(self.aggregator.result)
+                    self._save_cache(final_result)
                     frozen.save(constants.frozen_path)
-                await self._stop_aggregator()
 
             print(
                 t("msg.update_completed").format(

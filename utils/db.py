@@ -1,162 +1,186 @@
+import json
+import os
 import sqlite3
 from threading import Lock
 
 
-class SQLitePool:
-    def __init__(self, db_path, pool_size=5, timeout=30.0):
-        self.db_path = db_path
-        self.pool_size = pool_size
-        self.pool = []
-        self.lock = Lock()
-        self.timeout = timeout
-        for _ in range(pool_size):
-            self.pool.append(self._create_connection())
+_schema_lock = Lock()
+_write_lock = Lock()
+_migrated_dbs = {}
 
-    def _create_connection(self):
-        conn = sqlite3.connect(self.db_path, timeout=self.timeout, check_same_thread=False)
-        try:
-            conn.execute("PRAGMA journal_mode=WAL;")
-            conn.execute("PRAGMA synchronous=NORMAL;")
-            conn.execute("PRAGMA busy_timeout = 30000;")
-        except Exception:
-            pass
-        return conn
+_RESULT_DATA_SCHEMA = (
+    "CREATE TABLE IF NOT EXISTS result_data ("
+    "id TEXT PRIMARY KEY, url TEXT, headers TEXT, video_codec TEXT, "
+    "audio_codec TEXT, resolution TEXT, fps REAL)"
+)
 
-    def get_connection(self):
-        with self.lock:
-            if self.pool:
-                return self.pool.pop()
-            else:
-                return self._create_connection()
-
-    def return_connection(self, conn):
-        if conn is None:
-            return
-        with self.lock:
-            try:
-                if len(self.pool) < self.pool_size:
-                    self.pool.append(conn)
-                else:
-                    conn.close()
-            except Exception:
-                try:
-                    conn.close()
-                except Exception:
-                    pass
-
-    def close_all(self):
-        with self.lock:
-            while self.pool:
-                conn = self.pool.pop()
-                try:
-                    conn.close()
-                except Exception:
-                    pass
+_RESULT_DATA_COLUMNS = {
+    "id": "TEXT",
+    "url": "TEXT",
+    "headers": "TEXT",
+    "video_codec": "TEXT",
+    "audio_codec": "TEXT",
+    "resolution": "TEXT",
+    "fps": "REAL",
+}
 
 
-db_pools = {}
-
-
-def get_db_pool(db_path):
-    if db_path not in db_pools:
-        db_pools[db_path] = SQLitePool(db_path)
-    return db_pools[db_path]
+def _configure_connection(conn):
+    conn.execute("PRAGMA busy_timeout=30000")
+    conn.execute("PRAGMA synchronous=NORMAL")
+    return conn
 
 
 def get_db_connection(db_path):
-    pool = get_db_pool(db_path)
-    return pool.get_connection()
+    db_dir = os.path.dirname(db_path)
+    if db_dir:
+        os.makedirs(db_dir, exist_ok=True)
+    return _configure_connection(sqlite3.connect(db_path, timeout=30.0))
 
 
 def return_db_connection(db_path, conn):
-    pool = get_db_pool(db_path)
-    pool.return_connection(conn)
-
-
-_migrated_dbs = set()
-_migrate_lock = Lock()
+    if conn is None:
+        return
+    try:
+        if conn.in_transaction:
+            conn.rollback()
+    finally:
+        conn.close()
 
 
 def ensure_result_data_schema(db_path):
-    """Ensure result_data table exists with expected columns.
-
-    This function will:
-    - CREATE TABLE IF NOT EXISTS result_data with the full schema.
-    - Query existing columns (if any) and ALTER TABLE to add any missing columns.
-
-    It's safe to call repeatedly and will not remove or change existing columns.
-    """
-    expected_columns = {
-        'id': 'TEXT',
-        'url': 'TEXT',
-        'headers': 'TEXT',
-        'video_codec': 'TEXT',
-        'audio_codec': 'TEXT',
-        'resolution': 'TEXT',
-        'fps': 'REAL',
-    }
-
-    if db_path in _migrated_dbs:
+    try:
+        signature = (os.stat(db_path).st_dev, os.stat(db_path).st_ino)
+    except OSError:
+        signature = None
+    if signature is not None and _migrated_dbs.get(db_path) == signature:
         return
 
-    with _migrate_lock:
-        if db_path in _migrated_dbs:
+    with _schema_lock:
+        try:
+            signature = (os.stat(db_path).st_dev, os.stat(db_path).st_ino)
+        except OSError:
+            signature = None
+        if signature is not None and _migrated_dbs.get(db_path) == signature:
             return
 
-        conn = None
+        conn = get_db_connection(db_path)
         try:
-            conn = sqlite3.connect(db_path, timeout=30.0)
-            cur = conn.cursor()
-
-            try:
-                cur.execute("PRAGMA user_version;")
-                row = cur.fetchone()
-                user_ver = int(row[0]) if row and row[0] is not None else 0
-            except Exception:
-                user_ver = 0
-
-            if user_ver >= 1:
-                _migrated_dbs.add(db_path)
-                return
-
-            try:
-                cur.execute(
-                    "CREATE TABLE IF NOT EXISTS result_data (id TEXT PRIMARY KEY, url TEXT, headers TEXT, video_codec TEXT, audio_codec TEXT, resolution TEXT, fps REAL)"
-                )
-            except Exception:
-                pass
-
-            try:
-                cur.execute("PRAGMA table_info(result_data)")
-                rows = cur.fetchall()
-                existing = {row[1] for row in rows} if rows else set()
-            except Exception:
-                existing = set()
-
-            for col, col_type in expected_columns.items():
-                if col not in existing:
-                    try:
-                        cur.execute(f"ALTER TABLE result_data ADD COLUMN {col} {col_type}")
-                    except Exception:
-                        pass
-
-            try:
-                cur.execute("PRAGMA user_version = 1;")
-            except Exception:
-                pass
-
+            cursor = conn.cursor()
+            cursor.execute("PRAGMA journal_mode=WAL")
+            cursor.execute("BEGIN IMMEDIATE")
+            cursor.execute(_RESULT_DATA_SCHEMA)
+            cursor.execute("PRAGMA table_info(result_data)")
+            existing = {row[1] for row in cursor.fetchall()}
+            for column, column_type in _RESULT_DATA_COLUMNS.items():
+                if column not in existing:
+                    cursor.execute(f"ALTER TABLE result_data ADD COLUMN {column} {column_type}")
+            cursor.execute("PRAGMA user_version=1")
             conn.commit()
-
-            _migrated_dbs.add(db_path)
+            stat_result = os.stat(db_path)
+            _migrated_dbs[db_path] = (stat_result.st_dev, stat_result.st_ino)
         except Exception:
-            try:
-                if conn:
-                    conn.rollback()
-            except Exception:
-                pass
+            conn.rollback()
+            raise
         finally:
-            try:
-                if conn:
-                    conn.close()
-            except Exception:
-                pass
+            return_db_connection(db_path, conn)
+
+
+def replace_result_data(db_path, rows):
+    ensure_result_data_schema(db_path)
+    values = [
+        (
+            str(item.get("id")),
+            item.get("url"),
+            json.dumps(item.get("headers"), ensure_ascii=False) if item.get("headers") else None,
+            item.get("video_codec"),
+            item.get("audio_codec"),
+            item.get("resolution"),
+            item.get("fps"),
+        )
+        for item in rows
+        if item.get("id") is not None and item.get("url")
+    ]
+
+    with _write_lock:
+        conn = get_db_connection(db_path)
+        try:
+            conn.execute("BEGIN IMMEDIATE")
+            conn.execute("DELETE FROM result_data")
+            conn.executemany(
+                "INSERT INTO result_data "
+                "(id, url, headers, video_codec, audio_codec, resolution, fps) "
+                "VALUES (?, ?, ?, ?, ?, ?, ?)",
+                values,
+            )
+            conn.commit()
+        except Exception:
+            conn.rollback()
+            raise
+        finally:
+            return_db_connection(db_path, conn)
+
+
+def sync_result_data(db_path, rows):
+    ensure_result_data_schema(db_path)
+    values = {
+        str(item.get("id")): (
+            item.get("url"),
+            json.dumps(item.get("headers"), ensure_ascii=False, sort_keys=True) if item.get("headers") else None,
+            item.get("video_codec"),
+            item.get("audio_codec"),
+            item.get("resolution"),
+            item.get("fps"),
+        )
+        for item in rows
+        if item.get("id") is not None and item.get("url")
+    }
+
+    with _write_lock:
+        conn = get_db_connection(db_path)
+        try:
+            existing = {
+                row[0]: tuple(row[1:])
+                for row in conn.execute(
+                    "SELECT id, url, headers, video_codec, audio_codec, resolution, fps FROM result_data"
+                )
+            }
+            for item_id, value in list(values.items()):
+                previous = existing.get(item_id)
+                if not previous:
+                    continue
+                values[item_id] = (
+                    value[0],
+                    value[1],
+                    value[2] if value[2] is not None else previous[2],
+                    value[3] if value[3] is not None else previous[3],
+                    value[4] if value[4] is not None else previous[4],
+                    value[5] if value[5] is not None else previous[5],
+                )
+            changed = [
+                (item_id, *value)
+                for item_id, value in values.items()
+                if existing.get(item_id) != value
+            ]
+            removed = [(item_id,) for item_id in existing.keys() - values.keys()]
+            if not changed and not removed:
+                return
+            conn.execute("BEGIN IMMEDIATE")
+            if changed:
+                conn.executemany(
+                    "INSERT INTO result_data "
+                    "(id, url, headers, video_codec, audio_codec, resolution, fps) "
+                    "VALUES (?, ?, ?, ?, ?, ?, ?) "
+                    "ON CONFLICT(id) DO UPDATE SET "
+                    "url=excluded.url, headers=excluded.headers, video_codec=excluded.video_codec, "
+                    "audio_codec=excluded.audio_codec, resolution=excluded.resolution, fps=excluded.fps",
+                    changed,
+                )
+            if removed:
+                conn.executemany("DELETE FROM result_data WHERE id=?", removed)
+            conn.commit()
+        except Exception:
+            conn.rollback()
+            raise
+        finally:
+            return_db_connection(db_path, conn)
