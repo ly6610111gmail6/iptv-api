@@ -1,12 +1,8 @@
 # 这是订阅源列表，每行一个订阅地址，支持添加请求头
 # 格式：url,header1:value1,header2:value2
 # This is a list of subscription sources, with one subscription address per line
-#https://raw.githubusercontent.com/ly6610111gmail6/iptv-api/refs/heads/master/sub/sz.txt
-https://gongdian.top/tv/iptv UserAgent=okhttp/4.12.0
-#http://gc.gt.tc/o/i/HKJP%E4%B8%AD%E6%B8%AF%E6%97%A5%E9%9F%A9%E7%9B%B4%E6%92%AD%E6%BA%900216.txt
 
 
 [WHITELIST]
 # 以下是订阅源的白名单，白名单内的订阅源获取的接口将不会参与测速，始终保留至结果最前。
 # This is the whitelist for subscription sources. Subscription sources in the whitelist will not participate in speed testing and will always be retained at the front of the results.
-https://raw.githubusercontent.com/ly6610111gmail6/iptv-api/refs/heads/master/sub/sz.txt
